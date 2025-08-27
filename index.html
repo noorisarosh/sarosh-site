@@ -1,74 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My ChatGPT</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sarosh AI Chat</title>
   <style>
-    body {
-      background-color: #0d1117;
-      color: #e6edf3;
-      font-family: 'Inter', sans-serif;
-    }
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* basic styling */
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f4f6f9; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { width:100%; max-width:720px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.08); overflow:hidden; }
+    .header { background:#0066ff; color:#fff; padding:14px 18px; font-weight:600; }
+    .body { padding:18px; min-height:320px; display:flex; flex-direction:column; gap:12px; }
+    #login-section { display:block; }
+    #chat-section { display:none; }
+    .messages { border:1px solid #eee; padding:12px; height:320px; overflow:auto; border-radius:8px; background:#fafafa; }
+    .msg { margin:8px 0; }
+    .msg.user { text-align:right; color:#034efc; font-weight:600; }
+    .msg.bot { text-align:left; color:#111; }
+    .controls { display:flex; gap:8px; }
+    .controls input { flex:1; padding:10px; border-radius:6px; border:1px solid #ddd; }
+    .controls button { padding:10px 14px; border-radius:6px; border:0; background:#0066ff; color:#fff; cursor:pointer; }
+    .small { font-size:13px; color:#666; }
   </style>
 </head>
-<body class="flex flex-col h-screen">
-  <!-- Header -->
-  <header class="p-4 bg-gray-900 text-center shadow-lg">
-    <h1 class="text-xl font-bold text-green-400">🤖 My Private ChatGPT</h1>
-  </header>
+<body>
+  <div class="card" role="main">
+    <div class="header">💬 Sarosh AI Chat — password protected</div>
 
-  <!-- Chat container -->
-  <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3"></main>
+    <div class="body">
+      <!-- LOGIN -->
+      <div id="login-section">
+        <div class="small">Enter the site password to continue.</div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input id="password-input" type="password" placeholder="Password" />
+          <button id="login-btn">Log in</button>
+        </div>
+        <div id="login-status" class="small" style="margin-top:8px;color:#b00;"></div>
+      </div>
 
-  <!-- Input box -->
-  <form id="chat-form" class="p-4 bg-gray-900 flex items-center space-x-2">
-    <input id="user-input" 
-           type="text" 
-           placeholder="Type a message..."
-           class="flex-1 p-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring focus:ring-green-500" 
-           required>
-    <button class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition">Send</button>
-  </form>
+      <!-- CHAT -->
+      <div id="chat-section">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="small">You are logged in.</div>
+          <button id="logout-btn" style="background:#eee;color:#333;padding:6px 10px;border-radius:6px;border:0;cursor:pointer;">Log out</button>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="controls" style="margin-top:10px;">
+          <input id="user-input" placeholder="Type a message..." />
+          <button id="send-btn">Send</button>
+        </div>
+        <div id="error" class="small" style="color:#b00;"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const form = document.getElementById('chat-form');
-    const input = document.getElementById('user-input');
-    const chatContainer = document.getElementById('chat-container');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginStatus = document.getElementById('login-status');
+    const loginSection = document.getElementById('login-section');
+    const chatSection = document.getElementById('chat-section');
+    const messagesEl = document.getElementById('messages');
+    const sendBtn = document.getElementById('send-btn');
+    const userInput = document.getElementById('user-input');
+    const errorEl = document.getElementById('error');
 
-    function addMessage(text, sender) {
-      const div = document.createElement('div');
-      div.className = `fade-in p-3 rounded-lg max-w-lg ${sender === 'user' ? 'bg-green-600 ml-auto' : 'bg-gray-800'}`;
-      div.textContent = text;
-      chatContainer.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    function appendMessage(role, text) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+      d.textContent = text;
+      messagesEl.appendChild(d);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const userMessage = input.value.trim();
-      if (!userMessage) return;
+    async function login() {
+      loginStatus.textContent = '';
+      const password = document.getElementById('password-input').value;
+      if (!password) { loginStatus.textContent = 'Please enter password'; return; }
 
-      addMessage(userMessage, 'user');
-      input.value = '';
+      loginBtn.disabled = true;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
 
-      // Call backend API
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage })
-      });
-      const data = await res.json();
-      addMessage(data.reply, 'bot');
-    });
+        const data = await res.json().catch(()=>({}));
+
+        if (res.ok) {
+          loginSection.style.display = 'none';
+          chatSection.style.display = 'block';
+          appendMessage('bot', 'Welcome! Ask me anything.');
+        } else {
+          loginStatus.textContent = data?.error || 'Login failed';
+        }
+      } catch (err) {
+        loginStatus.textContent = 'Network error';
+      }
+      loginBtn.disabled = false;
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(()=>{});
+      chatSection.style.display = 'none';
+      loginSection.style.display = 'block';
+      messagesEl.innerHTML = '';
+      document.getElementById('password-input').value = '';
+      loginStatus.textContent = 'Logged out';
+    }
+
+    async function sendMessage() {
+      errorEl.textContent = '';
+      const text = userInput.value.trim();
+      if (!text) return;
+      appendMessage('user', text);
+      userInput.value = '';
+      appendMessage('bot', 'Thinking...');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        // replace last bot "Thinking..." with reply
+        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = data?.reply || data?.error || 'No reply';
+      } catch (err) {
+        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = '⚠️ Network error';
+      }
+    }
+
+    loginBtn.addEventListener('click', login);
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+    logoutBtn.addEventListener('click', logout);
   </script>
 </body>
 </html>
+
