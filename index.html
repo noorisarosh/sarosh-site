@@ -15,44 +15,137 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-  body { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  html, body { height: 100%; width: 100%; }
+
+  body {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
 
   .chat-container {
-    width: 100%; max-width: 720px; height: 80vh; display: flex; flex-direction: column; border-radius: 12px;
-    overflow: hidden; background: var(--card-bg); box-shadow: 0 12px 24px rgba(0,0,0,0.12); animation: fadeIn 0.5s ease;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: var(--card-bg);
+    overflow: hidden;
   }
 
   .header {
-    background: var(--primary); color: #fff; padding: 16px; font-size: 18px; font-weight: 600;
-    display: flex; justify-content: space-between; align-items: center;
+    background: var(--primary);
+    color: #fff;
+    padding: 16px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .header button {
-    background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 6px; color: #fff;
-    cursor: pointer; transition: background 0.2s;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
   }
 
   .header button:hover { background: rgba(255,255,255,0.35); }
 
   .body {
-    flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
   }
 
-  #login-section { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; flex: 1; }
+  #login-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+  }
+
   #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #ddd; width: 220px; }
   #login-section button { padding: 12px 18px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
   #login-section button:hover { background: #0050cc; }
 
-  #chat-section { display: flex; flex-direction: column; height: 100%; }
-  .messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 8px; }
-  .msg { max-width: 70%; padding: 10px 14px; border-radius: 12px; animation: fadeIn 0.3s ease; word-wrap: break-word; }
-  .msg.user { align-self: flex-end; background: var(--user-msg); color: #fff; border-bottom-right-radius: 4px; }
-  .msg.bot { align-self: flex-start; background: #eee; color: var(--bot-msg); border-bottom-left-radius: 4px; }
+  #chat-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
 
-  .controls { display: flex; gap: 8px; margin-top: 12px; }
-  .controls input { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #ddd; }
-  .controls button { padding: 12px 18px; border-radius: 12px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
-  .controls button:hover { background: #0050cc; }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+  }
+
+  .msg {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .msg.user { 
+    align-self: flex-end;
+    background: var(--user-msg);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.bot {
+    align-self: flex-start;
+    background: #eee;
+    color: var(--bot-msg);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Floating input bar */
+  .input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #fff;
+    border-top: 1px solid #ddd;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
+
+  .input-bar input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+  }
+
+  .input-bar button {
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+
+  .input-bar button:hover { background: #0050cc; }
 
   .small { font-size: 13px; color: #666; }
 
@@ -80,11 +173,14 @@
     <!-- CHAT -->
     <div id="chat-section">
       <div class="messages" id="messages"></div>
-      <div class="controls">
+
+      <!-- Floating input bar -->
+      <div class="input-bar">
         <input id="user-input" placeholder="Type a message..." />
         <button id="send-btn">Send</button>
       </div>
-      <div id="error" class="small" style="color:#b00;"></div>
+
+      <div id="error" class="small" style="color:#b00; padding: 0 20px;"></div>
     </div>
   </div>
 </div>
