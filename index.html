@@ -1,148 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sarosh AI Chat</title>
-  <style>
-    /* basic styling */
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f4f6f9; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-    .card { width:100%; max-width:720px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.08); overflow:hidden; }
-    .header { background:#0066ff; color:#fff; padding:14px 18px; font-weight:600; }
-    .body { padding:18px; min-height:320px; display:flex; flex-direction:column; gap:12px; }
-    #login-section { display:block; }
-    #chat-section { display:none; }
-    .messages { border:1px solid #eee; padding:12px; height:320px; overflow:auto; border-radius:8px; background:#fafafa; }
-    .msg { margin:8px 0; }
-    .msg.user { text-align:right; color:#034efc; font-weight:600; }
-    .msg.bot { text-align:left; color:#111; }
-    .controls { display:flex; gap:8px; }
-    .controls input { flex:1; padding:10px; border-radius:6px; border:1px solid #ddd; }
-    .controls button { padding:10px 14px; border-radius:6px; border:0; background:#0066ff; color:#fff; cursor:pointer; }
-    .small { font-size:13px; color:#666; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarosh AI Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0066ff;
+    --bg: #f5f7fa;
+    --card-bg: #fff;
+    --user-msg: #034efc;
+    --bot-msg: #111;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  body { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+  .chat-container {
+    width: 100%; max-width: 720px; height: 80vh; display: flex; flex-direction: column; border-radius: 12px;
+    overflow: hidden; background: var(--card-bg); box-shadow: 0 12px 24px rgba(0,0,0,0.12); animation: fadeIn 0.5s ease;
+  }
+
+  .header {
+    background: var(--primary); color: #fff; padding: 16px; font-size: 18px; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .header button {
+    background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 6px; color: #fff;
+    cursor: pointer; transition: background 0.2s;
+  }
+
+  .header button:hover { background: rgba(255,255,255,0.35); }
+
+  .body {
+    flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px;
+  }
+
+  #login-section { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; flex: 1; }
+  #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #ddd; width: 220px; }
+  #login-section button { padding: 12px 18px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
+  #login-section button:hover { background: #0050cc; }
+
+  #chat-section { display: flex; flex-direction: column; height: 100%; }
+  .messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 8px; }
+  .msg { max-width: 70%; padding: 10px 14px; border-radius: 12px; animation: fadeIn 0.3s ease; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--user-msg); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: #eee; color: var(--bot-msg); border-bottom-left-radius: 4px; }
+
+  .controls { display: flex; gap: 8px; margin-top: 12px; }
+  .controls input { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #ddd; }
+  .controls button { padding: 12px 18px; border-radius: 12px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
+  .controls button:hover { background: #0050cc; }
+
+  .small { font-size: 13px; color: #666; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 </head>
 <body>
-  <div class="card" role="main">
-    <div class="header">💬 Sarosh AI Chat — password protected</div>
+<div class="chat-container">
+  <div class="header">
+    💬 Sarosh AI Chat — password protected
+    <button id="logout-btn" style="display:none;">Log out</button>
+  </div>
+  <div class="body">
+    <!-- LOGIN -->
+    <div id="login-section">
+      <div class="small">Enter the site password to continue.</div>
+      <input id="password-input" type="password" placeholder="Password" />
+      <button id="login-btn">Log in</button>
+      <div id="login-status" class="small" style="color:#b00;"></div>
+    </div>
 
-    <div class="body">
-      <!-- LOGIN -->
-      <div id="login-section">
-        <div class="small">Enter the site password to continue.</div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <input id="password-input" type="password" placeholder="Password" />
-          <button id="login-btn">Log in</button>
-        </div>
-        <div id="login-status" class="small" style="margin-top:8px;color:#b00;"></div>
+    <!-- CHAT -->
+    <div id="chat-section">
+      <div class="messages" id="messages"></div>
+      <div class="controls">
+        <input id="user-input" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
       </div>
-
-      <!-- CHAT -->
-      <div id="chat-section">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div class="small">You are logged in.</div>
-          <button id="logout-btn" style="background:#eee;color:#333;padding:6px 10px;border-radius:6px;border:0;cursor:pointer;">Log out</button>
-        </div>
-
-        <div class="messages" id="messages"></div>
-
-        <div class="controls" style="margin-top:10px;">
-          <input id="user-input" placeholder="Type a message..." />
-          <button id="send-btn">Send</button>
-        </div>
-        <div id="error" class="small" style="color:#b00;"></div>
-      </div>
+      <div id="error" class="small" style="color:#b00;"></div>
     </div>
   </div>
+</div>
 
-  <script>
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const loginStatus = document.getElementById('login-status');
-    const loginSection = document.getElementById('login-section');
-    const chatSection = document.getElementById('chat-section');
-    const messagesEl = document.getElementById('messages');
-    const sendBtn = document.getElementById('send-btn');
-    const userInput = document.getElementById('user-input');
-    const errorEl = document.getElementById('error');
+<script>
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const loginStatus = document.getElementById('login-status');
+const loginSection = document.getElementById('login-section');
+const chatSection = document.getElementById('chat-section');
+const messagesEl = document.getElementById('messages');
+const sendBtn = document.getElementById('send-btn');
+const userInput = document.getElementById('user-input');
+const errorEl = document.getElementById('error');
 
-    function appendMessage(role, text) {
-      const d = document.createElement('div');
-      d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
-      d.textContent = text;
-      messagesEl.appendChild(d);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+function appendMessage(role, text){
+  const d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  d.textContent = text;
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
 
-    async function login() {
-      loginStatus.textContent = '';
-      const password = document.getElementById('password-input').value;
-      if (!password) { loginStatus.textContent = 'Please enter password'; return; }
+async function login() {
+  loginStatus.textContent = '';
+  const password = document.getElementById('password-input').value;
+  if (!password) { loginStatus.textContent = 'Please enter password'; return; }
+  loginBtn.disabled = true;
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json().catch(()=>({}));
+    if (res.ok){
+      loginSection.style.display = 'none';
+      chatSection.style.display = 'flex';
+      logoutBtn.style.display = 'block';
+      appendMessage('bot', 'Welcome! Ask me anything.');
+    } else loginStatus.textContent = data?.error || 'Login failed';
+  } catch(e){ loginStatus.textContent = 'Network error'; }
+  loginBtn.disabled = false;
+}
 
-      loginBtn.disabled = true;
-      try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
+async function logout() {
+  await fetch('/api/logout',{method:'POST',credentials:'same-origin'}).catch(()=>{});
+  chatSection.style.display='none'; loginSection.style.display='flex';
+  logoutBtn.style.display='none'; messagesEl.innerHTML='';
+  document.getElementById('password-input').value=''; loginStatus.textContent='Logged out';
+}
 
-        const data = await res.json().catch(()=>({}));
+async function sendMessage(){
+  errorEl.textContent=''; const text=userInput.value.trim();
+  if(!text) return; appendMessage('user',text); userInput.value='';
+  appendMessage('bot','Thinking...');
+  try{
+    const res = await fetch('/api/chat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const data = await res.json();
+    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = data?.reply || data?.error || 'No reply';
+  } catch(e){
+    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = '⚠️ Network error';
+  }
+}
 
-        if (res.ok) {
-          loginSection.style.display = 'none';
-          chatSection.style.display = 'block';
-          appendMessage('bot', 'Welcome! Ask me anything.');
-        } else {
-          loginStatus.textContent = data?.error || 'Login failed';
-        }
-      } catch (err) {
-        loginStatus.textContent = 'Network error';
-      }
-      loginBtn.disabled = false;
-    }
-
-    async function logout() {
-      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(()=>{});
-      chatSection.style.display = 'none';
-      loginSection.style.display = 'block';
-      messagesEl.innerHTML = '';
-      document.getElementById('password-input').value = '';
-      loginStatus.textContent = 'Logged out';
-    }
-
-    async function sendMessage() {
-      errorEl.textContent = '';
-      const text = userInput.value.trim();
-      if (!text) return;
-      appendMessage('user', text);
-      userInput.value = '';
-      appendMessage('bot', 'Thinking...');
-
-      try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
-        });
-
-        const data = await res.json();
-        // replace last bot "Thinking..." with reply
-        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
-        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = data?.reply || data?.error || 'No reply';
-      } catch (err) {
-        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
-        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = '⚠️ Network error';
-      }
-    }
-
-    loginBtn.addEventListener('click', login);
-    sendBtn.addEventListener('click', sendMessage);
-    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
-    logoutBtn.addEventListener('click', logout);
-  </script>
+loginBtn.addEventListener('click', login);
+sendBtn.addEventListener('click', sendMessage);
+userInput.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+logoutBtn.addEventListener('click', logout);
+</script>
 </body>
 </html>
-
