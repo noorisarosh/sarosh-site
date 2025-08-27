@@ -1,132 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sarosh AI Chat</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .chat-container {
-      width: 100%;
-      max-width: 600px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .chat-header {
-      background: #0078ff;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .chat-messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-    }
-    .message {
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-    .user {
-      text-align: right;
-      color: #0078ff;
-      font-weight: bold;
-    }
-    .bot {
-      text-align: left;
-      color: #333;
-    }
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ddd;
-    }
-    .chat-input input {
-      flex: 1;
-      border: none;
-      padding: 15px;
-      font-size: 16px;
-    }
-    .chat-input button {
-      background: #0078ff;
-      border: none;
-      color: white;
-      padding: 15px 20px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .chat-input button:hover {
-      background: #005fcc;
-    }
+    /* basic styling */
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f4f6f9; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { width:100%; max-width:720px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.08); overflow:hidden; }
+    .header { background:#0066ff; color:#fff; padding:14px 18px; font-weight:600; }
+    .body { padding:18px; min-height:320px; display:flex; flex-direction:column; gap:12px; }
+    #login-section { display:block; }
+    #chat-section { display:none; }
+    .messages { border:1px solid #eee; padding:12px; height:320px; overflow:auto; border-radius:8px; background:#fafafa; }
+    .msg { margin:8px 0; }
+    .msg.user { text-align:right; color:#034efc; font-weight:600; }
+    .msg.bot { text-align:left; color:#111; }
+    .controls { display:flex; gap:8px; }
+    .controls input { flex:1; padding:10px; border-radius:6px; border:1px solid #ddd; }
+    .controls button { padding:10px 14px; border-radius:6px; border:0; background:#0066ff; color:#fff; cursor:pointer; }
+    .small { font-size:13px; color:#666; }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">💬 Sarosh AI Chat</div>
-    <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-input">
-      <input type="text" id="user-input" placeholder="Type your message..." />
-      <button onclick="sendMessage()">Send</button>
+  <div class="card" role="main">
+    <div class="header">💬 Sarosh AI Chat — password protected</div>
+
+    <div class="body">
+      <!-- LOGIN -->
+      <div id="login-section">
+        <div class="small">Enter the site password to continue.</div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input id="password-input" type="password" placeholder="Password" />
+          <button id="login-btn">Log in</button>
+        </div>
+        <div id="login-status" class="small" style="margin-top:8px;color:#b00;"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="chat-section">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="small">You are logged in.</div>
+          <button id="logout-btn" style="background:#eee;color:#333;padding:6px 10px;border-radius:6px;border:0;cursor:pointer;">Log out</button>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="controls" style="margin-top:10px;">
+          <input id="user-input" placeholder="Type a message..." />
+          <button id="send-btn">Send</button>
+        </div>
+        <div id="error" class="small" style="color:#b00;"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    const messagesDiv = document.getElementById("chat-messages");
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginStatus = document.getElementById('login-status');
+    const loginSection = document.getElementById('login-section');
+    const chatSection = document.getElementById('chat-section');
+    const messagesEl = document.getElementById('messages');
+    const sendBtn = document.getElementById('send-btn');
+    const userInput = document.getElementById('user-input');
+    const errorEl = document.getElementById('error');
 
-    function appendMessage(sender, text) {
-      const div = document.createElement("div");
-      div.classList.add("message", sender);
-      div.textContent = text;
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    function appendMessage(role, text) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+      d.textContent = text;
+      messagesEl.appendChild(d);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function login() {
+      loginStatus.textContent = '';
+      const password = document.getElementById('password-input').value;
+      if (!password) { loginStatus.textContent = 'Please enter password'; return; }
+
+      loginBtn.disabled = true;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await res.json().catch(()=>({}));
+
+        if (res.ok) {
+          loginSection.style.display = 'none';
+          chatSection.style.display = 'block';
+          appendMessage('bot', 'Welcome! Ask me anything.');
+        } else {
+          loginStatus.textContent = data?.error || 'Login failed';
+        }
+      } catch (err) {
+        loginStatus.textContent = 'Network error';
+      }
+      loginBtn.disabled = false;
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(()=>{});
+      chatSection.style.display = 'none';
+      loginSection.style.display = 'block';
+      messagesEl.innerHTML = '';
+      document.getElementById('password-input').value = '';
+      loginStatus.textContent = 'Logged out';
     }
 
     async function sendMessage() {
-      const input = document.getElementById("user-input");
-      const text = input.value.trim();
+      errorEl.textContent = '';
+      const text = userInput.value.trim();
       if (!text) return;
+      appendMessage('user', text);
+      userInput.value = '';
+      appendMessage('bot', 'Thinking...');
 
-      appendMessage("user", text);
-      input.value = "";
-
-      // Call OpenAI API here
       try {
-        appendMessage("bot", "Thinking...");
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer YOUR_API_KEY_HERE"
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: text }]
-          })
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
         });
 
-        const data = await response.json();
-        document.querySelector(".bot:last-child").textContent =
-          data.choices[0].message.content.trim();
+        const data = await res.json();
+        // replace last bot "Thinking..." with reply
+        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = data?.reply || data?.error || 'No reply';
       } catch (err) {
-        document.querySelector(".bot:last-child").textContent =
-          "⚠️ Error: " + err.message;
+        const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+        if (botMsgs.length) botMsgs[botMsgs.length - 1].textContent = '⚠️ Network error';
       }
     }
+
+    loginBtn.addEventListener('click', login);
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+    logoutBtn.addEventListener('click', logout);
   </script>
 </body>
 </html>
