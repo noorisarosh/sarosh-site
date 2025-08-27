@@ -7,11 +7,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary: #0066ff;
-    --bg: #f5f7fa;
-    --card-bg: #fff;
-    --user-msg: #034efc;
-    --bot-msg: #111;
+    --primary: #10a37f;
+    --bg: #202123; /* darker ChatGPT-style background */
+    --card-bg: #2a2b2f; /* slightly lighter card */
+    --user-msg: #0b93f6;
+    --bot-msg: #e5e5e5;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
@@ -72,11 +72,12 @@
     align-items: center;
     gap: 12px;
     padding: 20px;
+    color: #fff;
   }
 
-  #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #ddd; width: 220px; }
+  #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #555; width: 220px; background:#1e1f22; color:#fff; }
   #login-section button { padding: 12px 18px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
-  #login-section button:hover { background: #0050cc; }
+  #login-section button:hover { background: #0e826b; }
 
   #chat-section {
     display: flex;
@@ -98,7 +99,9 @@
     padding: 10px 14px;
     border-radius: 12px;
     word-wrap: break-word;
-    animation: fadeIn 0.3s ease;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: slideUp 0.3s forwards;
   }
 
   .msg.user { 
@@ -110,7 +113,7 @@
 
   .msg.bot {
     align-self: flex-start;
-    background: #eee;
+    background: #333;
     color: var(--bot-msg);
     border-bottom-left-radius: 4px;
   }
@@ -120,18 +123,22 @@
     display: flex;
     gap: 8px;
     padding: 12px 20px;
-    background: #fff;
-    border-top: 1px solid #ddd;
+    background: #1e1f22;
+    border-top: 1px solid #444;
     position: sticky;
     bottom: 0;
     z-index: 10;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.4);
+    border-radius: 12px 12px 0 0;
   }
 
   .input-bar input {
     flex: 1;
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
+    background:#2a2b2f;
+    color:#fff;
   }
 
   .input-bar button {
@@ -145,11 +152,11 @@
     transition: 0.2s;
   }
 
-  .input-bar button:hover { background: #0050cc; }
+  .input-bar button:hover { background: #0e826b; }
 
-  .small { font-size: 13px; color: #666; }
+  .small { font-size: 13px; color: #aaa; }
 
-  @keyframes fadeIn {
+  @keyframes slideUp {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
@@ -180,7 +187,7 @@
         <button id="send-btn">Send</button>
       </div>
 
-      <div id="error" class="small" style="color:#b00; padding: 0 20px;"></div>
+      <div id="error" class="small" style="padding: 0 20px;"></div>
     </div>
   </div>
 </div>
