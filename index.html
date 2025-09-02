@@ -1,160 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sarosh AI Chat</title>
-  <style>
-    :root {
-      --bg: #202123;
-      --panel: #2d2f31;
-      --brand: #10a37f;
-      --text: #ececec;
-      --text-muted: #9ca3af;
-      --bubble-user: #3b82f6;
-      --bubble-ai: #2d2f31;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      height: 100vh;
-    }
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 820px;
-      height: 100%;
-    }
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-    .bubble {
-      display: flex;
-      gap: .5rem;
-      margin-bottom: 1rem;
-      line-height: 1.5;
-    }
-    .avatar {
-      flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      background: var(--panel);
-    }
-    .user .avatar { background: var(--bubble-user); }
-    .content {
-      background: var(--bubble-ai);
-      padding: .75rem 1rem;
-      border-radius: .75rem;
-      max-width: 75%;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .user .content { background: var(--bubble-user); }
-    .composer {
-      padding: .75rem;
-      background: var(--panel);
-      display: flex;
-      gap: .5rem;
-      align-items: flex-end;
-    }
-    .composer textarea {
-      flex: 1;
-      background: transparent;
-      border: none;
-      resize: none;
-      outline: none;
-      color: var(--text);
-      font-size: 1rem;
-      line-height: 1.5;
-      max-height: 200px;
-    }
-    .composer button {
-      width: 40px;
-      height: 40px;
-      border: none;
-      border-radius: 50%;
-      background: var(--brand);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .composer svg {
-      width: 18px;
-      height: 18px;
-      stroke: white;
-    }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarosh AI Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #10a37f;
+    --bg: #202123; /* darker ChatGPT-style background */
+    --card-bg: #2a2b2f; /* slightly lighter card */
+    --user-msg: #0b93f6;
+    --bot-msg: #e5e5e5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; width: 100%; }
+
+  body {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: var(--card-bg);
+    overflow: hidden;
+  }
+
+  .header {
+    background: var(--primary);
+    color: #fff;
+    padding: 16px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .header button:hover { background: rgba(255,255,255,0.35); }
+
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #login-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    color: #fff;
+  }
+
+  #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #555; width: 220px; background:#1e1f22; color:#fff; }
+  #login-section button { padding: 12px 18px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
+  #login-section button:hover { background: #0e826b; }
+
+  #chat-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+  }
+
+  .msg {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    word-wrap: break-word;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: slideUp 0.3s forwards;
+  }
+
+  .msg.user { 
+    align-self: flex-end;
+    background: var(--user-msg);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.bot {
+    align-self: flex-start;
+    background: #333;
+    color: var(--bot-msg);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Floating input bar */
+  .input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #1e1f22;
+    border-top: 1px solid #444;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.4);
+    border-radius: 12px 12px 0 0;
+  }
+
+  .input-bar input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #444;
+    background:#2a2b2f;
+    color:#fff;
+  }
+
+  .input-bar button {
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+
+  .input-bar button:hover { background: #0e826b; }
+
+  .small { font-size: 13px; color: #aaa; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 </head>
 <body>
-  <div class="chat-container">
-    <div id="messages" class="messages"></div>
-    <div class="composer">
-      <textarea id="input" rows="1" placeholder="Send a message..."></textarea>
-      <button id="send">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 3l18 9-18 9 3-9zm0 0l18-9-9 18-9-9z"/></svg>
-      </button>
+<div class="chat-container">
+  <div class="header">
+    💬 Sarosh Ali Noori AI Chat
+    <button id="logout-btn" style="display:none;">Log out</button>
+  </div>
+  <div class="body">
+    <!-- LOGIN -->
+    <div id="login-section">
+      <div class="small">Enter the site password to continue.</div>
+      <input id="password-input" type="password" placeholder="Password" />
+      <button id="login-btn">Log in</button>
+      <div id="login-status" class="small" style="color:#b00;"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chat-section">
+      <div class="messages" id="messages"></div>
+
+      <!-- Floating input bar -->
+      <div class="input-bar">
+        <input id="user-input" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
+      </div>
+
+      <div id="error" class="small" style="padding: 0 20px;"></div>
     </div>
   </div>
+</div>
 
-  <script>
-    const messagesEl = document.getElementById('messages');
-    const inputEl = document.getElementById('input');
-    const sendBtn = document.getElementById('send');
+<script>
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const loginStatus = document.getElementById('login-status');
+const loginSection = document.getElementById('login-section');
+const chatSection = document.getElementById('chat-section');
+const messagesEl = document.getElementById('messages');
+const sendBtn = document.getElementById('send-btn');
+const userInput = document.getElementById('user-input');
+const errorEl = document.getElementById('error');
 
-    function addMessage(role, text) {
-      const wrapper = document.createElement('div');
-      wrapper.className = `bubble ${role}`;
-      wrapper.innerHTML = `
-        <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
-        <div class="content">${text}</div>
-      `;
-      messagesEl.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+function appendMessage(role, text){
+  const d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  d.textContent = text;
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
 
-    async function sendMessage() {
-      const text = inputEl.value.trim();
-      if (!text) return;
-      addMessage('user', text);
-      inputEl.value = '';
-
-      // Call your backend here
-      try {
-        const res = await fetch('https://your-api-endpoint.com/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
-        });
-        const data = await res.json();
-        addMessage('ai', data.reply || 'No response');
-      } catch (e) {
-        addMessage('ai', '⚠️ Error contacting API');
-      }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    inputEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+async function login() {
+  loginStatus.textContent = '';
+  const password = document.getElementById('password-input').value;
+  if (!password) { loginStatus.textContent = 'Please enter password'; return; }
+  loginBtn.disabled = true;
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
     });
-  </script>
+    const data = await res.json().catch(()=>({}));
+    if (res.ok){
+      loginSection.style.display = 'none';
+      chatSection.style.display = 'flex';
+      logoutBtn.style.display = 'block';
+      appendMessage('bot', 'Welcome! Ask me anything.');
+    } else loginStatus.textContent = data?.error || 'Login failed';
+  } catch(e){ loginStatus.textContent = 'Network error'; }
+  loginBtn.disabled = false;
+}
+
+async function logout() {
+  await fetch('/api/logout',{method:'POST',credentials:'same-origin'}).catch(()=>{});
+  chatSection.style.display='none'; loginSection.style.display='flex';
+  logoutBtn.style.display='none'; messagesEl.innerHTML='';
+  document.getElementById('password-input').value=''; loginStatus.textContent='Logged out';
+}
+
+async function sendMessage(){
+  errorEl.textContent=''; const text=userInput.value.trim();
+  if(!text) return; appendMessage('user',text); userInput.value='';
+  appendMessage('bot','Thinking...');
+  try{
+    const res = await fetch('/api/chat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const data = await res.json();
+    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = data?.reply || data?.error || 'No reply';
+  } catch(e){
+    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
+    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = '⚠️ Network error';
+  }
+}
+
+loginBtn.addEventListener('click', login);
+sendBtn.addEventListener('click', sendMessage);
+userInput.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+logoutBtn.addEventListener('click', logout);
+</script>
 </body>
 </html>
+
+
+
