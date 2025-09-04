@@ -5,5 +5,5 @@ export default function handler(req, res) {
     return res.status(200).end();
   }
 
-  res.status(200).json({ message: "Hello, my name is AI from OpenAI." });
+  res.status(200).json({ message: "nigger." });
 }
