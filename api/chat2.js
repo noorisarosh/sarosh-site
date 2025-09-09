@@ -3,19 +3,25 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { message } = req.body;
+    const { message, image } = req.body;
+    let messages = [{ role: "system", content: "You are a helpful AI assistant." }];
 
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
+    if (image) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: message || "Analyze this image" },
+          { type: "image_url", image_url: { url: image } }
+        ]
+      });
+    } else if (message) {
+      messages.push({ role: "user", content: message });
+    } else {
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -25,11 +31,9 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // lightweight + fast
-        messages: [
-          { role: "system", content: "You are a helpful AI assistant." },
-          { role: "user", content: message },
-        ],
+        model: "gpt-4o",
+        messages,
+        max_tokens: 1000,
       }),
     });
 
