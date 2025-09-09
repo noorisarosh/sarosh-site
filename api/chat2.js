@@ -1,7 +1,8 @@
 // Next.js / Vercel API route - chat2.js
 // Accepts { message, image } where image is a data URL ("data:image/png;base64,...")
 // Saves the image to /tmp, then attempts to call OpenAI Responses API to analyze the image.
-// Returns JSON: { success: true, reply: "<ai text>" } on success, otherwise diagnostics.
+// If OpenAI rejects the inline image type, returns a clear diagnostic with recommendation to upload the file
+// to public storage and resend with a public URL.
 
 import fs from "fs";
 import path from "path";
@@ -10,7 +11,7 @@ import { randomBytes } from "crypto";
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "20mb", // allow larger images if needed
+      sizeLimit: "25mb",
     },
   },
 };
@@ -25,22 +26,19 @@ function decodeDataUrl(dataUrl) {
 }
 
 async function callOpenAIWithImage(dataUrl, userMessage = "Please analyze this image and describe what you see.") {
-  // Using the OpenAI Responses API with an input that contains both text and an inline image data URL.
-  // NOTE: The exact image support depends on your OpenAI model/access. If this call fails with an
-  // error that images aren't allowed, you should upload the image to public storage and pass a public URL.
+  // Send the image_url as a string (OpenAI expects a URL string, not an object).
   const url = "https://api.openai.com/v1/responses";
   const body = {
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini", // adjust model if needed
+    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     input: [
       {
         role: "user",
         content: [
           { type: "input_text", text: userMessage },
-          // Some OpenAI SDKs expect "input_image" or "image_url" shapes. We send this shape which many
-          // newer Responses API examples accept. If you get validation errors, see fallback notes below.
-          { type: "input_image", image_url: { url: dataUrl } }
-        ]
-      }
+          // IMPORTANT: image_url must be a string (the URL). We're passing the full data URL string here.
+          { type: "input_image", image_url: dataUrl }
+        ],
+      },
     ],
     max_output_tokens: 1000,
   };
@@ -54,44 +52,41 @@ async function callOpenAIWithImage(dataUrl, userMessage = "Please analyze this i
     body: JSON.stringify(body),
   });
 
-  const text = await res.text();
-  // try to parse JSON, return parsed object or throw
+  const raw = await res.text();
+
+  // Try parse JSON
   try {
-    const json = JSON.parse(text);
+    const json = JSON.parse(raw);
     if (!res.ok) {
       const err = new Error("OpenAI API error");
       err.details = json;
       throw err;
     }
-    // Responses API may return a top-level "output" or "result" object. Try common shapes:
-    // - json.output_text or json.output[0].content[0].text  (varies)
-    // We'll attempt to extract a plain text reply robustly:
-    // 1) If there's a top-level `output_text` property, use it.
+
+    // Try to extract text reply in a few common shapes
     if (json.output_text) return { success: true, reply: json.output_text, raw: json };
-    // 2) If there is `output` with array, try to concatenate any text content
     if (Array.isArray(json.output)) {
       let collected = "";
       for (const item of json.output) {
         if (typeof item === "string") collected += item + "\n";
         if (item?.content && Array.isArray(item.content)) {
           for (const c of item.content) {
-            if (c.type === "output_text" && c.text) collected += c.text + "\n";
-            if (c.type === "message" && c.text) collected += c.text + "\n";
-            if (c.type === "text" && c.text) collected += c.text + "\n";
+            if ((c.type === "output_text" || c.type === "text" || c.type === "message") && c.text) collected += c.text + "\n";
           }
         }
       }
       if (collected.trim()) return { success: true, reply: collected.trim(), raw: json };
     }
-    // 3) Legacy responses shape: `json.choices[0].message.content`
     if (json?.choices?.[0]?.message?.content) {
       return { success: true, reply: json.choices[0].message.content, raw: json };
     }
-    // fallback: return raw json as string
+
+    // If we can't extract text, return raw JSON truncated
     return { success: true, reply: JSON.stringify(json).slice(0, 2000), raw: json };
   } catch (err) {
-    // include raw text if JSON.parse failed
-    throw new Error(`OpenAI response parse error: ${err.message}. Raw: ${text}`);
+    // Include Raw body for debugging
+    err.raw = raw;
+    throw err;
   }
 }
 
@@ -121,10 +116,9 @@ export default async function handler(req, res) {
 
       console.log("Saved captured image:", tmpPath, "size bytes:", buffer.length);
 
-      // Attempt to call OpenAI to analyze the inline image
+      // Attempt to call OpenAI to analyze the inline image (image_url as a string)
       try {
         const aiResult = await callOpenAIWithImage(image, message || "Please analyze this image and describe it.");
-        // Return successful analysis
         return res.status(200).json({
           success: true,
           saved: { file: tmpPath, bytes: buffer.length },
@@ -133,24 +127,33 @@ export default async function handler(req, res) {
         });
       } catch (openAiErr) {
         console.error("OpenAI call failed:", openAiErr);
-        // Return saved file diagnostics and the OpenAI error details
+
+        // Detect the "invalid_type" style error that indicates OpenAI expected an actual URL or doesn't accept the inline data URL
+        const details = openAiErr?.details || openAiErr?.message || openAiErr?.raw || String(openAiErr);
+
+        // Provide a helpful fallback message describing next steps
+        const fallbackAdvice = [
+          "OpenAI rejected the inline data URL. Some OpenAI models/APIs expect a publicly-accessible image URL rather than a data: URI.",
+          "Recommended fallback: upload the saved file to a public URL (S3, Cloudflare R2, or similar) and then call the Responses API with that public URL (replace the data URL with the public URL string).",
+          "If you want, I can provide code to upload to S3/R2 (requires bucket credentials)."
+        ].join(" ");
+
         return res.status(502).json({
           success: false,
           message: "Image saved but OpenAI analysis failed",
           file: tmpPath,
           bytes: buffer.length,
-          openai_error: openAiErr?.details || openAiErr?.message || String(openAiErr)
+          openai_error: details,
+          fallback: fallbackAdvice
         });
       }
     }
 
-    // If no image, handle text-only flow (existing behavior)
+    // Text-only flow
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Text-only chat: use Chat Completions (legacy) or Responses API for text-only
-    // For simplicity we'll call the chat completions endpoint as before:
     const payloadMessages = [
       { role: "system", content: "You are a helpful AI assistant." },
       { role: "user", content: message },
