@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // ✅ Use a real model
+      model: "gpt-4o-mini", // ✅ Use a real model
       messages: [
         { 
           role: "system", 
