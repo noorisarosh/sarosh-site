@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...history
       ],
        // Limit for simple summaries
+      max_tokens: 10000,
       temperature: 0.7,
     });
 
