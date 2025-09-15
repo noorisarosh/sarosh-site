@@ -1,62 +1,49 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import OpenAI from "openai";
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Add CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { text } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ error: "Missing text to summarize" });
+    const { message, image } = req.body;
+    let messages = [{ role: "system", content: "You are an ai summarizer, summarize the text we send you and nothing else, if the text is too short to summarize, say it, summarize it simply but good, keep it short and clean and not too long." }];
+
+    if (image) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: message || "Analyze this image" },
+          { type: "image_url", image_url: { url: image } }
+        ]
+      });
+    } else if (message) {
+      messages.push({ role: "user", content: message });
+    } else {
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "Missing API key" });
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // ✅ Use a real model
-      messages: [
-        { 
-          role: "system", 
-          content: "You are a helpful assistant that provides clear, concise summaries. Keep your responses short and easy to understand." 
-        },
-        { 
-          role: "user", 
-          content: `Summarize this text simply but make sure I understand and keep it short:\n\n${text}` 
-        }
-      ],
-      max_tokens: 500,
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 1000,
+      }),
     });
 
-    const summary = completion.choices[0]?.message?.content || "Unable to generate summary";
+    const data = await response.json();
 
-    return res.status(200).json({ 
-      summary: summary,
-      type: "simple_summary"
+    res.status(200).json({
+      reply: data.choices?.[0]?.message?.content || "No reply",
     });
-
   } catch (err) {
-    console.error("Simple summary error:", err);
-    return res.status(500).json({ 
-      error: "Failed to generate simple summary", 
-      details: err.message 
-    });
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
   }
 }
