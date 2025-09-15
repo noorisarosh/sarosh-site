@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     history.push({ role: "user", content: userPrompt });
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4-turbo",
       messages: [
         { role: "system", content: "You are a helpful assistant that provides clear, concise summaries. Keep your responses short and easy to understand." },
         ...history
