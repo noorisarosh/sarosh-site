@@ -1,21 +1,26 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import OpenAI from "openai";
-import { v4 as uuidv4 } from "uuid";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// In-memory conversation store (temporary, resets on redeploy)
-const conversations = new Map<string, { role: string; content: string }[]>();
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Add CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { text, conversationId } = req.body || {};
+    const { text } = req.body;
     
     if (!text) {
       return res.status(400).json({ error: "Missing text to summarize" });
@@ -25,37 +30,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Missing API key" });
     }
 
-    const newId = conversationId || uuidv4();
-    const history = conversations.get(newId) || [];
-    
-    // Add system prompt for simple summarization
-    const systemPrompt = "summarize this simply but make sure i understand and keep it short";
-    const userPrompt = `${systemPrompt}\n\n${text}`;
-    
-    history.push({ role: "user", content: userPrompt });
-
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-nano",
+      model: "gpt-3.5-turbo", // ✅ Use a real model
       messages: [
-        { role: "system", content: "You are a helpful assistant that provides clear, concise summaries. Keep your responses short and easy to understand." },
-        ...history
+        { 
+          role: "system", 
+          content: "You are a helpful assistant that provides clear, concise summaries. Keep your responses short and easy to understand." 
+        },
+        { 
+          role: "user", 
+          content: `Summarize this text simply but make sure I understand and keep it short:\n\n${text}` 
+        }
       ],
-       // Limit for simple summaries
-      
+      max_tokens: 500,
     });
 
     const summary = completion.choices[0]?.message?.content || "Unable to generate summary";
-    
-    history.push({ role: "assistant", content: summary });
-    conversations.set(newId, history);
 
     return res.status(200).json({ 
       summary: summary,
-      conversationId: newId,
       type: "simple_summary"
     });
 
-  } catch (err: any) {
+  } catch (err) {
     console.error("Simple summary error:", err);
     return res.status(500).json({ 
       error: "Failed to generate simple summary", 
