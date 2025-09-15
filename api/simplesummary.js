@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-5-nano",
         messages,
-        max_tokens: 1000,
+        
       }),
     });
 
