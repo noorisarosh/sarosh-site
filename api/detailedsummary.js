@@ -1,11 +1,3 @@
-import formidable from "formidable";
-
-export const config = {
-  api: {
-    bodyParser: false, // disable default JSON parser
-  },
-};
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
@@ -15,30 +7,21 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const form = formidable();
-    const [fields, files] = await form.parse(req);
+    const { message, image } = req.body;
+    let messages = [{ role: "system", content: "You are an AI summarizer. Summarize the text we send you. If the text is too short to summarize, say it. Summarize simply but with enough detail, and include key points." }];
 
-    const message = fields.message?.[0];
-    const file = files.file?.[0];
-
-    if (!message && !file) {
-      return res.status(400).json({ error: "Message or file is required" });
-    }
-
-    let messages = [
-      {
-        role: "system",
-        content:
-          "You are an AI summarizer. Summarize the text we send you. If the text is too short to summarize, say it. Summarize simply but with enough detail, and include key points.",
-      },
-    ];
-
-    if (message) {
+    if (image) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: message || "Analyze this image" },
+          { type: "image_url", image_url: { url: image } }
+        ]
+      });
+    } else if (message) {
       messages.push({ role: "user", content: message });
-    }
-    if (file) {
-      // right now we’re not processing file contents, just acknowledging it
-      messages.push({ role: "user", content: `File uploaded: ${file.originalFilename}` });
+    } else {
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -60,7 +43,7 @@ export default async function handler(req, res) {
       reply: data.choices?.[0]?.message?.content || "No reply",
     });
   } catch (err) {
-    console.error("Detailed summary backend error:", err);
+    console.error(err);
     res.status(500).json({ error: "Something went wrong" });
   }
 }
