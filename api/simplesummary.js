@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: "You are a helpful assistant that provides clear, concise summaries. Keep your responses short and easy to understand." },
         ...history
       ],
-      max_tokens: 500, // Limit for simple summaries
+       // Limit for simple summaries
       temperature: 0.7,
     });
 
