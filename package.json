@@ -1,28 +1,11 @@
-
 {
   "name": "sarosh-site-api",
   "version": "1.0.0",
-  "description": "Backend API for sarosh.site with file processing capabilities",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "start": "echo 'Use vercel dev for local development'"
-  },
+  "description": "Backend API for sarosh.site",
   "dependencies": {
-    "formidable": "^3.5.1",
-    "pdf-parse": "^1.1.1",
-    "mammoth": "^1.6.0",
-    "xlsx": "^0.18.5",
-    "csv-parser": "^3.0.0",
-    "node-html-parser": "^6.1.12",
-    "marked": "^9.1.6",
-    "cheerio": "^1.0.0-rc.12",
-    "iconv-lite": "^0.6.3",
-    "mime-types": "^2.1.35"
+    "formidable": "^3.5.1"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "license": "MIT"
+  }
 }
