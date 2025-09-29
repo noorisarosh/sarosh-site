@@ -1,267 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sarosh AI Chat</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --primary: #10a37f;
-    --bg: #202123; /* darker ChatGPT-style background */
-    --card-bg: #2a2b2f; /* slightly lighter card */
-    --user-msg: #0b93f6;
-    --bot-msg: #e5e5e5;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-  html, body { height: 100%; width: 100%; }
-
-  body {
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .chat-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    background: var(--card-bg);
-    overflow: hidden;
-  }
-
-  .header {
-    background: var(--primary);
-    color: #fff;
-    padding: 16px 20px;
-    font-size: 18px;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .header button {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .header button:hover { background: rgba(255,255,255,0.35); }
-
-  .body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
-
-  #login-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    padding: 20px;
-    color: #fff;
-  }
-
-  #login-section input { padding: 12px; border-radius: 8px; border: 1px solid #555; width: 220px; background:#1e1f22; color:#fff; }
-  #login-section button { padding: 12px 18px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-weight: 600; transition: 0.2s; }
-  #login-section button:hover { background: #0e826b; }
-
-  #chat-section {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
-  }
-
-  .msg {
-    max-width: 70%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    word-wrap: break-word;
-    opacity: 0;
-    transform: translateY(8px);
-    animation: slideUp 0.3s forwards;
-  }
-
-  .msg.user { 
-    align-self: flex-end;
-    background: var(--user-msg);
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
-
-  .msg.bot {
-    align-self: flex-start;
-    background: #333;
-    color: var(--bot-msg);
-    border-bottom-left-radius: 4px;
-  }
-
-  /* Floating input bar */
-  .input-bar {
-    display: flex;
-    gap: 8px;
-    padding: 12px 20px;
-    background: #1e1f22;
-    border-top: 1px solid #444;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.4);
-    border-radius: 12px 12px 0 0;
-  }
-
-  .input-bar input {
-    flex: 1;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #444;
-    background:#2a2b2f;
-    color:#fff;
-  }
-
-  .input-bar button {
-    padding: 12px 18px;
-    border-radius: 12px;
-    border: none;
-    background: var(--primary);
-    color: #fff;
-    cursor: pointer;
-    font-weight: 600;
-    transition: 0.2s;
-  }
-
-  .input-bar button:hover { background: #0e826b; }
-
-  .small { font-size: 13px; color: #aaa; }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ulan is a love</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #202123; /* dark background */
+      color: #10a37f; /* green text */
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      font-size: 64px;
+      font-weight: 600;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-<div class="chat-container">
-  <div class="header">
-    💬 Sarosh Ali Noori AI Chat
-    <button id="logout-btn" style="display:none;">Log out</button>
-  </div>
-  <div class="body">
-    <!-- LOGIN -->
-    <div id="login-section">
-      <div class="small">Enter the site password to continue.</div>
-      <input id="password-input" type="password" placeholder="Password" />
-      <button id="login-btn">Log in</button>
-      <div id="login-status" class="small" style="color:#b00;"></div>
-    </div>
-
-    <!-- CHAT -->
-    <div id="chat-section">
-      <div class="messages" id="messages"></div>
-
-      <!-- Floating input bar -->
-      <div class="input-bar">
-        <input id="user-input" placeholder="Type a message..." />
-        <button id="send-btn">Send</button>
-      </div>
-
-      <div id="error" class="small" style="padding: 0 20px;"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-const loginBtn = document.getElementById('login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const loginStatus = document.getElementById('login-status');
-const loginSection = document.getElementById('login-section');
-const chatSection = document.getElementById('chat-section');
-const messagesEl = document.getElementById('messages');
-const sendBtn = document.getElementById('send-btn');
-const userInput = document.getElementById('user-input');
-const errorEl = document.getElementById('error');
-
-function appendMessage(role, text){
-  const d = document.createElement('div');
-  d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
-  d.textContent = text;
-  messagesEl.appendChild(d);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-
-async function login() {
-  loginStatus.textContent = '';
-  const password = document.getElementById('password-input').value;
-  if (!password) { loginStatus.textContent = 'Please enter password'; return; }
-  loginBtn.disabled = true;
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-    const data = await res.json().catch(()=>({}));
-    if (res.ok){
-      loginSection.style.display = 'none';
-      chatSection.style.display = 'flex';
-      logoutBtn.style.display = 'block';
-      appendMessage('bot', 'Welcome! Ask me anything.');
-    } else loginStatus.textContent = data?.error || 'Login failed';
-  } catch(e){ loginStatus.textContent = 'Network error'; }
-  loginBtn.disabled = false;
-}
-
-async function logout() {
-  await fetch('/api/logout',{method:'POST',credentials:'same-origin'}).catch(()=>{});
-  chatSection.style.display='none'; loginSection.style.display='flex';
-  logoutBtn.style.display='none'; messagesEl.innerHTML='';
-  document.getElementById('password-input').value=''; loginStatus.textContent='Logged out';
-}
-
-async function sendMessage(){
-  errorEl.textContent=''; const text=userInput.value.trim();
-  if(!text) return; appendMessage('user',text); userInput.value='';
-  appendMessage('bot','Thinking...');
-  try{
-    const res = await fetch('/api/chat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
-    const data = await res.json();
-    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
-    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = data?.reply || data?.error || 'No reply';
-  } catch(e){
-    const botMsgs = Array.from(messagesEl.querySelectorAll('.msg.bot'));
-    if(botMsgs.length) botMsgs[botMsgs.length-1].textContent = '⚠️ Network error';
-  }
-}
-
-loginBtn.addEventListener('click', login);
-sendBtn.addEventListener('click', sendMessage);
-userInput.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
-logoutBtn.addEventListener('click', logout);
-</script>
+  <h1>Ulan is a love</h1>
 </body>
 </html>
-
-
-
